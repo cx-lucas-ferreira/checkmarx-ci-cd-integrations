@@ -4,7 +4,7 @@ pipeline {
         CX_VERSION = '2.3.32'
         CX_BASE_URI = 'https://us.ast.checkmarx.net'
         CX_ADDITIONAL_PARAMS = '--scan-types sast,sca,scs,container-security,iac-security'
-        CX_PROJECT_NAME = ${REPO_NAME}
+        CX_PROJECT_NAME = ${JOB_NAME}
         
     }
     stages {
