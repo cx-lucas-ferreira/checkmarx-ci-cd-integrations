@@ -4,4 +4,4 @@ pipelines:
   default:
     - step:
         script:
-          - /app/bin/cx scan create -s $BITBUCKET_CLONE_DIR --project-name $BITBUCKET_WORKSPACE/$BITBUCKET_REPO_SLUG --branch $BITBUCKET_BRANCH --base-uri $BASE_URI --tenant $TENANT --client-id $CLIENT_ID --client-secret $CLIENT_SECRET 
+          - /app/bin/cx scan create -s $BITBUCKET_CLONE_DIR --project-name $BITBUCKET_WORKSPACE/$BITBUCKET_REPO_SLUG --branch $BITBUCKET_BRANCH --base-uri $BASE_URI --tenant $TENANT --client-id $CLIENT_ID --client-secret $CLIENT_SECRET --scan-types sast,sca,scs,container-security,iac-security 
