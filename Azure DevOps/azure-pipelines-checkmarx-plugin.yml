@@ -1,0 +1,19 @@
+trigger:
+  branches:
+    include:
+    - none
+pool:
+  vmImage: 'ubuntu-latest'
+stages:
+- stage: Checkmarx_Scans
+  jobs:
+  - job: scan
+    steps:
+    - task: Checkmarx AST@3
+      inputs:
+        CheckmarxService: 'checkmarx-svc-connection'
+        projectName: '$(OrganizationName)/$(System.TeamProject)/$(Build.Repository.Name)'
+        branchName: '$(Build.SourceBranchName)'
+        tenantName: '$(TenantName)'
+      displayName: 'Checkmarx'
+
