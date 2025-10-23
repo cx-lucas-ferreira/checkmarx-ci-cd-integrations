@@ -13,7 +13,7 @@ stages:
         inputs:
           targetType: 'inline'
           script: |
-            Invoke-WebRequest -Uri "https://github.com/Checkmarx/ast-cli/releases/download/2.3.32/ast-cli_2.3.32_windows_x64.zip" -OutFile "$(Agent.BuildDirectory)\ast-cli_2.3.32_windows_x64.zip"
-            Expand-Archive -Path "$(Agent.BuildDirectory)\ast-cli_2.3.32_windows_x64.zip" -DestinationPath "$(Agent.BuildDirectory)"
-            $(Agent.BuildDirectory)\cx.exe scan create -s $(Build.Repository.LocalPath) --project-name $(OrganizationName)/$(System.TeamProject)/$(Build.Repository.Name) --branch $(Build.SourceBranchName) --base-uri $(CX_BASE_URI) --tenant $(CX_TENANT) --client-id $(CX_CLIENT_ID) --client-secret $(CX_CLIENT_SECRET) --scan-types sast,sca,container-security
+            Invoke-WebRequest -Uri "https://github.com/Checkmarx/ast-cli/releases/download/2.3.38/ast-cli_2.3.38_windows_x64.zip" -OutFile "$(Agent.BuildDirectory)\ast-cli_2.3.38_windows_x64.zip"
+            Expand-Archive -Path "$(Agent.BuildDirectory)\ast-cli_2.3.38_windows_x64.zip" -DestinationPath "$(Agent.BuildDirectory)"
+            $(Agent.BuildDirectory)\cx.exe scan create -s $(Build.Repository.LocalPath) --project-name $(OrganizationName)/$(System.TeamProject)/$(Build.Repository.Name) --branch $(Build.SourceBranchName) --base-uri $(CX_BASE_URI) --tenant $(CX_TENANT) --client-id $(CX_CLIENT_ID) --client-secret $(CX_CLIENT_SECRET)
         displayName: 'Checkmarx'
