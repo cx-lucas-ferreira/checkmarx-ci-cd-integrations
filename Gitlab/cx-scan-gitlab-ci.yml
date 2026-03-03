@@ -1,0 +1,20 @@
+stages:
+    - scan 
+
+variables:
+    #CX_PROJECT_NAME: "$CI_PROJECT_NAME"
+    #CX_BASE_URI: ${CX_BASE_URI}
+    TENANT: ${CX_TENANT}
+    ID: ${CX_CLIENT_ID}
+    SECRET: ${CX_CLIENT_SECRET}
+    CX_ADDITIONAL_PARAMS: ""
+    CX_FILE_FILTERS: ""
+    CHECKMARX_DOCKER_IMAGE: "ast-cli"
+
+checkmarx-scan:
+  stage: scan
+  image:
+    name: checkmarx/${CHECKMARX_DOCKER_IMAGE}
+    entrypoint: ['']
+  script:
+    - /app/bin/cx scan create --file-source '.' --project-name $CI_PROJECT_NAME --branch $CI_COMMIT_REF_NAME --agent 'Gitlab' --client-id ${ID} --client-secret ${SECRET} --base-uri "https://us.ast.checkmarx.net" --tenant ${TENANT}
