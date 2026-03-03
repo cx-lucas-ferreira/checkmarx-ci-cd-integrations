@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    stages {
+        stage('Checkout') {
+            steps {
+                checkout([$class: 'GitSCM',
+                          branches: [[name: '*/main']],
+                          extensions: [],
+                          userRemoteConfigs: [[credentialsId: 'github-personal-access-token', url: 'https://github.com/cx-devsecops/vulndemo-java.git']]])
+                sh 'ls -ls'
+            }
+        }
+        stage('Checkmarx Scan') {
+            steps {
+                //sh 'CX_PROJECT_NAME=$(echo "${GIT_URL}" | cut -d "/" -f4- | sed \'s/.git//g\')'
+                //echo '${GIT_URL}'
+                //echo '"${CX_PROJECT_NAME}"'
+                    checkmarxASTScanner additionalOptions: '--tags Jenkins-${BUILD_ID} --scan-types sast,sca,iac-security,container-security,scs --scs-engines secret-detection', 
+                    baseAuthUrl: '', 
+                    branchName: 'main', 
+                    checkmarxInstallation: 'ast-cli', 
+                    credentialsId: '', 
+                    projectName: 'cx-devsecops/vulndemo-java', 
+                    serverUrl: '', 
+                    tenantName: '', 
+                    useOwnAdditionalOptions: true
+            }
+        }
+    }
+    post { 
+        always { 
+            cleanWs()
+        }
+    }
+}
