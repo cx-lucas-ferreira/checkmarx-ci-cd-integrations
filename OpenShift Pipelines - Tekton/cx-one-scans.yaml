@@ -1,0 +1,180 @@
+apiVersion: tekton.dev/v1beta1
+kind: Pipeline
+metadata:
+  name: checkmarx-one-pipeline
+  namespace: my-project
+spec:
+  params:
+    - name: GIT_URL
+      type: string
+      description: "Source repository URL"
+    - name: GIT_REVISION
+      type: string
+      default: "main"
+      description: "Branch, tag, or commit SHA to scan"
+    - name: CX_PROJECT_NAME
+      type: string
+      description: "Checkmarx One project name (e.g. my-org/my-app)"
+    - name: SCAN_TYPES
+      type: string
+      default: "sast,iac-security,sca,api-security,container-security,scs"
+      description: "Scan types: sast,iac-security,sca,api-security,container-security,scs"
+
+  tasks:
+    # ──────────────────────────────────────────────
+    # TASK 1: Clone the source repository
+    # ──────────────────────────────────────────────
+    - name: git-clone
+      taskRef:
+        name: git-clone
+        kind: ClusterTask
+      params:
+        - name: url
+          value: $(params.GIT_URL)
+        - name: revision
+          value: $(params.GIT_REVISION)
+      workspaces:
+        - name: output
+          workspace: source
+
+    # ──────────────────────────────────────────────
+    # TASK 2: Run Checkmarx One scan via CX CLI
+    # ──────────────────────────────────────────────
+    - name: checkmarx-one-scan
+      runAfter:
+        - git-clone
+      taskSpec:
+        params:
+          - name: CX_PROJECT_NAME
+          - name: CX_BRANCH
+          - name: SCAN_TYPES
+        steps:
+          - name: cx-scan
+            image: checkmarx/ast-cli:latest
+            env:
+              - name: CX_BASE_URI
+                valueFrom:
+                  secretKeyRef:
+                    name: checkmarx-credentials
+                    key: base_uri
+              - name: CX_TENANT
+                valueFrom:
+                  secretKeyRef:
+                    name: checkmarx-credentials
+                    key: tenant
+              - name: CX_CLIENT_ID
+                valueFrom:
+                  secretKeyRef:
+                    name: checkmarx-credentials
+                    key: client_id
+              - name: CX_CLIENT_SECRET
+                valueFrom:
+                  secretKeyRef:
+                    name: checkmarx-credentials
+                    key: client_secret
+            command:
+              - cx
+            args:
+              - scan
+              - create
+              - "--project-name"
+              - $(params.CX_PROJECT_NAME)
+              - "--branch"
+              - $(params.CX_BRANCH)
+              - "--scan-types"
+              - $(params.SCAN_TYPES)
+              - "--source"
+              - /workspace/source
+              - "--report-format"
+              - "json"
+              - "--output-path"
+              - "/workspace/cx-report"
+              - "--async"
+              - "true"
+            volumeMounts:
+              - name: cx-report
+                mountPath: /workspace/cx-report
+        volumes:
+          - name: cx-report
+            emptyDir: {}
+      params:
+        - name: CX_PROJECT_NAME
+          value: $(params.CX_PROJECT_NAME)
+        - name: CX_BRANCH
+          value: $(params.GIT_REVISION)
+        - name: SCAN_TYPES
+          value: $(params.SCAN_TYPES)
+      workspaces:
+        - name: source
+          workspace: source
+
+    # ──────────────────────────────────────────────
+    # TASK 3: Print Checkmarx scan report
+    # ──────────────────────────────────────────────
+    - name: print-cx-report
+      runAfter:
+        - checkmarx-one-scan
+      taskSpec:
+        steps:
+          - name: show-cx-report
+            image: registry.access.redhat.com/ubi8/ubi-minimal:latest
+            script: |
+              #!/bin/sh
+              echo "===== Checkmarx One Scan Report ====="
+              cat /workspace/cx-report/*.json || echo "No JSON report found."
+            volumeMounts:
+              - name: cx-report
+                mountPath: /workspace/cx-report
+        volumes:
+          - name: cx-report
+            emptyDir: {}
+
+  workspaces:
+    - name: source
+
+---
+# ──────────────────────────────────────────────────────────────────────
+# PipelineRun — manually trigger the pipeline
+# ──────────────────────────────────────────────────────────────────────
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: checkmarx-one-run-001
+  namespace: my-project
+spec:
+  pipelineRef:
+    name: checkmarx-one-pipeline
+  params:
+    - name: GIT_URL
+      value: "https://github.com/my-org/my-repo.git"
+    - name: GIT_REVISION
+      value: "main"
+    - name: CX_PROJECT_NAME
+      value: "my-org/my-app"
+    - name: SCAN_TYPES
+      value: "sast,iac-security,sca,api-security,container-security,scs"
+  workspaces:
+    - name: source
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 1Gi
+
+---
+# ──────────────────────────────────────────────────────────────────────
+# Secret — Checkmarx One credentials
+# ──────────────────────────────────────────────────────────────────────
+apiVersion: v1
+kind: Secret
+metadata:
+  name: checkmarx-credentials
+  namespace: my-project
+type: Opaque
+stringData:
+  base_uri: "https://ast.checkmarx.net"   # Your CxOne tenant URL
+  tenant: "your-tenant-name"
+  client_id: "your-client-id"             # From CxOne IAM > API Keys
+  client_secret: "your-client-secret"
