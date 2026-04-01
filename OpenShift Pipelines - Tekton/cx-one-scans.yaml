@@ -90,7 +90,7 @@ spec:
               - "--output-path"
               - "/workspace/cx-report"
               - "--async"
-              - "true"
+              - "false"
             volumeMounts:
               - name: cx-report
                 mountPath: /workspace/cx-report
