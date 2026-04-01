@@ -73,7 +73,7 @@ spec:
                     name: checkmarx-credentials
                     key: client_secret
             command:
-              - cx
+              - /app/bin/cx
             args:
               - scan
               - create
@@ -83,7 +83,7 @@ spec:
               - $(params.CX_BRANCH)
               - "--scan-types"
               - $(params.SCAN_TYPES)
-              - "--source"
+              - "--file-source"
               - /workspace/source
               - "--report-format"
               - "json"
